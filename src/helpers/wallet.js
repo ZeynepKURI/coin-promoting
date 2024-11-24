@@ -1,92 +1,67 @@
 import detectEthereumProvider from '@metamask/detect-provider';
-import { ENVS } from './configurations/index';
+import { ethers } from 'ethers';
 
-export const connectWallet = async () => {
-  const provider = await detectEthereumProvider();
-
-  if (provider) {
+// Check and initialize the wallet provider
+export const initializeWallet = async () => {
     try {
-      const walletChainId = await provider.request({
-        method: 'eth_chainId',
-      });
-
-      if (parseInt(walletChainId) === parseInt(ENVS.CHAIN_ID)) {
-        const addressArray = await provider.request({
-          method: 'eth_requestAccounts',
-        });
-
-        if (addressArray.length) {
-          return {
-            address: addressArray[0],
-            status: 'Connected',
-          };
+        const provider = await detectEthereumProvider();
+        if (provider) {
+            console.log('MetaMask is installed!');
+            // Set the wallet provider globally
+            window.ethereum = provider;
         } else {
-          return {
-            address: '',
-            status: 'No wallet connected',
-          };
+            console.error('MetaMask is not installed!');
+            alert('MetaMask not found. Please install MetaMask.');
         }
-      } else {
-        provider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: ENVS.CHAIN_ID }],
-        });
-
-        return {
-          address: '',
-          status: 'Was on the other chain',
-        };
-      }
-    } catch (err) {
-      return {
-        address: '',
-        status: `😥 ${err.message}`,
-      };
+    } catch (error) {
+        console.error('Error detecting Ethereum provider:', error);
+        alert('Unable to connect to wallet.');
     }
-  } else {
-    console.log(`🦊 You must install Metamask, a virtual Ethereum wallet, in your
-            browser.(https://metamask.io/download.html)`);
-    return {
-      address: '',
-      status: "Can't find web3 provider",
-    };
-  }
 };
 
-export const getCurrentWalletConnected = async () => {
-  const provider = await detectEthereumProvider();
-
-  if (provider) {
+// Connect wallet
+export const connectWallet = async () => {
     try {
-      const addressArray = await provider.request({
-        method: 'eth_accounts',
-      });
-      const walletChainId = await provider.request({
-        method: 'eth_chainId',
-      });
-      if (addressArray.length && walletChainId === ENVS.CHAIN_ID) {
-        return {
-          address: addressArray[0],
-          status: 'Get your SadPug pack, 0.013ETH',
-        };
-      } else {
-        return {
-          address: '',
-          status: 'Connect Metamask',
-        };
-      }
-    } catch (err) {
-      return {
-        address: '',
-        status: `😥 ${err.message}`,
-      };
+        if (!window.ethereum) {
+            console.error('No wallet found! Please install MetaMask.');
+            alert('MetaMask not found! Please install MetaMask.');
+            return;
+        }
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const address = await signer.getAddress();
+        console.log('Connected address:', address);
+        return address;
+    } catch (error) {
+        console.error('Wallet connection failed:', error);
+        alert('Failed to connect to wallet.');
     }
-  } else {
-    console.log(`🦊 You must install Metamask, a virtual Ethereum wallet, in your
-            browser.(https://metamask.io/download.html)`);
-    return {
-      address: '',
-      status: "Can't find web3 provider",
-    };
-  }
+};
+
+// Check network
+export const checkNetwork = async () => {
+    try {
+        if (!window.ethereum) {
+            console.error('No wallet found!');
+            return;
+        }
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const network = await provider.getNetwork();
+        console.log('Connected network:', network);
+        return network;
+    } catch (error) {
+        console.error('Error checking network:', error);
+        alert('Unable to check network.');
+    }
+};
+
+// Disconnect wallet
+export const disconnectWallet = async () => {
+    try {
+        console.log('Disconnect wallet function triggered.');
+        // Wallet disconnection logic can be added here
+    } catch (error) {
+        console.error('Error during wallet disconnection:', error);
+    }
 };
