@@ -1,7 +1,40 @@
 const { Front, Snipping } = require('../models');
 const sController = require('./snippingController');
 const fController = require('./frontController');
+const { ethers } = require('ethers');
 
+// Check wallet connection
+const checkWalletConnection = async (walletAddress) => {
+    try {
+        const provider = new ethers.providers.JsonRpcProvider('YOUR_INFURA_OR_ALCHEMY_URL'); // Add your Infura or Alchemy URL here
+        const balance = await provider.getBalance(walletAddress);
+        console.log('Wallet balance:', ethers.utils.formatEther(balance));
+        return balance;
+    } catch (error) {
+        console.error('Error connecting to wallet:', error);
+        throw new Error('Unable to connect to wallet!');
+    }
+};
+
+// Start a transaction
+const startTransaction = async (walletAddress, amount) => {
+    try {
+        const provider = new ethers.providers.JsonRpcProvider('YOUR_INFURA_OR_ALCHEMY_URL');
+        const wallet = new ethers.Wallet('YOUR_PRIVATE_KEY', provider); // Private key should be securely managed
+        const transaction = {
+            to: walletAddress,
+            value: ethers.utils.parseEther(amount), // Set amount in Ether
+            gasLimit: 21000, // Gas limit for a basic transaction
+            gasPrice: ethers.utils.parseUnits('10', 'gwei'), // Gas price
+        };
+        const txResponse = await wallet.sendTransaction(transaction);
+        console.log('Transaction hash:', txResponse.hash);
+        return txResponse.hash;
+    } catch (error) {
+        console.error('Transaction failed:', error);
+        throw new Error('Transaction failed!');
+    }
+};
 module.exports = {
   /* snipping */
 
@@ -268,3 +301,4 @@ module.exports = {
       );
   },
 };
+
